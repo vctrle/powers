@@ -3,16 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Divide Powers Tool</title>
+    <title>Subtract Powers Tool</title>
     <script src="2to50-100.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        textarea {
+            width: 90%;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        #output {
+            margin-top: 20px;
+            word-wrap: break-word;
+        }
+        #progress-container {
+            width: 90%;
+            background-color: #f3f3f3;
+            border: 1px solid #ccc;
+            margin: 20px auto;
+            height: 30px;
+            position: relative;
+        }
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #4caf50;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+    </style>
 </head>
 <body>
-    <h1>Divide Powers Tool</h1>
-    <textarea id="inputNumber" placeholder="Enter a large number" rows="7" style="width:90%"></textarea>
-    <button onclick="dividePowers()">Divide Powers</button>
+    <h1>Subtract Powers Tool</h1>
+    <textarea id="inputNumber" placeholder="Enter a large number" rows="7"></textarea>
+    <button onclick="subtractPowers()">Subtract Powers</button>
+    <div id="progress-container">
+        <div id="progress-bar">0%</div>
+    </div>
     <div id="output"></div>
     <script>
-        function dividePowers() {
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function subtractPowers() {
             if (typeof power === 'undefined') {
                 document.getElementById('output').innerText = 'Error: Powers not loaded.';
                 return;
@@ -21,7 +63,9 @@
             let bigNumber = BigInt(document.getElementById('inputNumber').value);
             const outputDiv = document.getElementById('output');
             outputDiv.innerHTML = '';
+            const progressBar = document.getElementById('progress-bar');
 
+            const initialDigits = bigNumber.toString().length;
             const results = [];
             const bases = Object.keys(powers).map(Number).sort((a, b) => b - a);
             const threshold = BigInt(10 ** 20);
@@ -29,10 +73,13 @@
             while (bigNumber >= threshold) {
                 let closestPQ = null;
                 let closestPowerDisplay = "";
-                for (let base of bases) {
-                    for (let expIndex = powers[base].length - 1; expIndex >= 0; expIndex--) {
-                        const P = BigInt(powers[base][expIndex]);
-                        for (let Q = 10; Q >= 1; Q--) {
+
+                // Use floating-point arithmetic for square roots to find the closest base and exponent
+                for (let Q = 10; Q >= 1; Q--) {
+                    let sqrtBigNumber = Math.pow(Number(bigNumber), 1 / Q);
+                    for (let base of bases) {
+                        for (let expIndex = powers[base].length - 1; expIndex >= 0; expIndex--) {
+                            const P = BigInt(powers[base][expIndex]);
                             const PQ = P ** BigInt(Q);
                             if (bigNumber >= PQ && (closestPQ === null || PQ > closestPQ)) {
                                 closestPQ = PQ;
@@ -44,15 +91,15 @@
                         }
                     }
                 }
+
                 if (closestPQ !== null) {
-                    const divisionResult = bigNumber / closestPQ;
-                    const remainder = bigNumber % closestPQ;
-                    bigNumber = remainder;
-                    if (divisionResult > 1) {
-                        results.push(`${closestPowerDisplay}*${divisionResult}`);
-                    } else {
-                        results.push(`${closestPowerDisplay}`);
-                    }
+                    bigNumber -= closestPQ;
+                    results.push(`${closestPowerDisplay}`);
+                    const remainingDigits = bigNumber.toString().length;
+                    const progressPercentage = (1 - remainingDigits / initialDigits) * 100;
+                    progressBar.style.width = `${progressPercentage}%`;
+                    progressBar.textContent = `${progressPercentage.toFixed(2)}%`;
+                    await sleep(50);
                 } else {
                     break;
                 }
@@ -62,6 +109,8 @@
                 results.push(`${bigNumber}`);
             }
 
+            progressBar.style.width = '100%';
+            progressBar.textContent = '100%';
             const finalResult = results.join(' + ');
             const p = document.createElement('p');
             p.textContent = finalResult;
