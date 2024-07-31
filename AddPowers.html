@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divide Powers Tool</title>
+    <script src="2to50-100.js"></script>
+</head>
+<body>
+    <h1>Divide Powers Tool</h1>
+    <textarea id="inputNumber" placeholder="Enter a large number" rows="7" style="width:90%"></textarea>
+    <button onclick="dividePowers()">Divide Powers</button>
+    <div id="output"></div>
+    <script>
+        function dividePowers() {
+            if (typeof power === 'undefined') {
+                document.getElementById('output').innerText = 'Error: Powers not loaded.';
+                return;
+            }
+            const powers = power;
+            let bigNumber = BigInt(document.getElementById('inputNumber').value);
+            const outputDiv = document.getElementById('output');
+            outputDiv.innerHTML = '';
+
+            const results = [];
+            const bases = Object.keys(powers).map(Number).sort((a, b) => b - a);
+            const threshold = BigInt(10 ** 20);
+
+            while (bigNumber >= threshold) {
+                let closestPQ = null;
+                let closestPowerDisplay = "";
+                for (let base of bases) {
+                    for (let expIndex = powers[base].length - 1; expIndex >= 0; expIndex--) {
+                        const P = BigInt(powers[base][expIndex]);
+                        for (let Q = 10; Q >= 1; Q--) {
+                            const PQ = P ** BigInt(Q);
+                            if (bigNumber >= PQ && (closestPQ === null || PQ > closestPQ)) {
+                                closestPQ = PQ;
+                                closestPowerDisplay = `${base}^${expIndex + 1}`;
+                                if (Q > 1) {
+                                    closestPowerDisplay += `^${Q}`;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (closestPQ !== null) {
+                    const divisionResult = bigNumber / closestPQ;
+                    const remainder = bigNumber % closestPQ;
+                    bigNumber = remainder;
+                    if (divisionResult > 1) {
+                        results.push(`${closestPowerDisplay}*${divisionResult}`);
+                    } else {
+                        results.push(`${closestPowerDisplay}`);
+                    }
+                } else {
+                    break;
+                }
+            }
+
+            if (bigNumber > 0) {
+                results.push(`${bigNumber}`);
+            }
+
+            const finalResult = results.join(' + ');
+            const p = document.createElement('p');
+            p.textContent = finalResult;
+            outputDiv.appendChild(p);
+        }
+    </script>
+</body>
+</html>
